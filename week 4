@@ -1,0 +1,102 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
+
+# paths of each dataset
+country_path = r"D:\\Somya\\prepinsta internship\\week 4\\Country.csv"
+country_population_path = r"D:\\Somya\\prepinsta internship\\week 4\\country_population.csv"
+fertility_rate_path = r"D:\\Somya\\prepinsta internship\\week 4\\fertility_rate.csv"
+life_expectancy_path = r"D:\\Somya\\prepinsta internship\\week 4\\life_expectancy.csv"
+
+# dataset
+country = pd.read_csv(country_path, encoding='latin1')
+country_population = pd.read_csv(country_population_path, encoding='latin1')
+fertility_rate = pd.read_csv(fertility_rate_path, encoding='latin1' )
+life_expectancy = pd.read_csv(life_expectancy_path, encoding='latin1')
+
+# Replacing the missing value from the country population data and dropping the entire row of missing data value
+country_population.replace("",np.NaN,inplace=True)
+country_population = country_population.dropna(subset=["1960","1992","2012"], axis=0)
+
+# extracting only these three columns from the entire dataset
+country = country[["Country Code","Region","TableName"]]
+country.replace("",np.NaN,inplace=True)
+# Removing the countries from the dataset which were removed from the population dataset
+countries_to_exclude = ["Not classified","West Bank and Gaza", "Serbia", "Sint Marteen (Dutch part)", "Kuwait","Eritrea"]
+country = country[~country["TableName"].isin(countries_to_exclude)]
+# And hence extracting only these two columns
+country = country[["Country Code","Region"]]
+
+# Removing the countries from the dataset which were removed from the population dataset
+fertility_rate = fertility_rate[~fertility_rate["Country Name"].isin(countries_to_exclude)]
+fertility_rate.replace("",np.NaN,inplace=True)
+
+# Removing the countries from the dataset which were removed from the population dataset
+life_expectancy = life_expectancy[~life_expectancy["Country Name"].isin(countries_to_exclude)]
+life_expectancy.replace("",np.NaN,inplace=True)
+
+# Now dropping the entire column as not required from the above datasets
+country_population.drop(["Country Name","Indicator Name","Indicator Code"], axis=1, inplace=True)
+life_expectancy.drop(["Country Name","Indicator Name","Indicator Code"], axis=1, inplace=True)
+fertility_rate.drop(["Country Name","Indicator Name","Indicator Code"], axis=1, inplace=True)
+
+years = [str(i) for i in range(1960,2017)]
+# merging country and population dataset
+dataframe1 = pd.melt(country_population,
+        id_vars="Country Code",
+        value_vars=years,
+        var_name="Year",
+        value_name="Population")
+country_and_population_merge = pd.merge(country,dataframe1,how="left",on="Country Code")
+# merging country and life expectancy dataset
+dataframe2 = pd.melt(life_expectancy,
+        id_vars="Country Code",
+        value_vars=years,
+        var_name="Year",
+        value_name="life-expectancy")
+country_and_expectancy_merge = pd.merge(country,dataframe2,how="left",on="Country Code")
+# merging country and fertility rate dataset
+dataframe3 = pd.melt(fertility_rate,
+        id_vars="Country Code",
+        value_vars=years,
+        var_name="Year",
+        value_name="fertility-rate")
+country_and_fertility_merge = pd.merge(country,dataframe3,how="left",on="Country Code")
+# now merging these three datasets
+merged_data = pd.merge(country_and_population_merge, country_and_expectancy_merge, how="left",on=["Country Code","Region","Year"])
+merged_data = pd.merge(merged_data, country_and_fertility_merge, how="left",on=["Country Code","Region","Year"])
+# data formating of this new dataset
+merged_data.replace("",np.NaN,inplace=True)
+merged_data = merged_data.dropna(subset="Year",axis=0) # dropped the entire row of null value
+avg_life_expectancy = merged_data["life-expectancy"].astype("float").mean()
+merged_data["life-expectancy"].replace(np.NaN,avg_life_expectancy,inplace=True) # replaced null value with mean of the data
+avg_fertility_rate = merged_data["fertility-rate"].astype("float").mean()
+merged_data["fertility-rate"].replace(np.NaN,avg_fertility_rate,inplace=True) # replaced null value with mean of the data
+
+print(merged_data.head(10))
+print(merged_data.describe(include="all"))
+
+figure1 = px.scatter(merged_data,
+           x="fertility-rate",
+           y="life-expectancy",
+           animation_frame="Year",
+           animation_group="Country Code",
+           size="Population",
+           color="Region",
+           hover_name="Country Code",
+           log_x=True,
+           size_max=55,
+           range_x=[1,10],
+           range_y=[10,100])
+
+figure2 = px.bar(merged_data,
+           x="Region",
+           y="Population",
+           animation_frame="Year",
+           animation_group="Country Code",
+           color="Region",
+           range_y=[0,2500000000])
+
+figure1.show()
+figure2.show()
