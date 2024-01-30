@@ -1,0 +1,23 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+localpath_2 = "D:\Somya\prepinsta internship\week 3\dataset no.2.csv"
+
+dataframe_2 = pd.read_csv(localpath_2)
+
+dataframe_2["item_price"] = dataframe_2["item_price"].str.replace("$","")
+dataframe_2.rename(columns={"item_price": "price in $"}, inplace=True)
+dataframe_2["price in $"] = pd.to_numeric(dataframe_2["price in $"], errors='coerce')
+
+dataframe_2.to_csv("D:\Somya\prepinsta internship\week 3\cleaned dataset no.2.csv", index=False)
+
+print(dataframe_2.head(5))
+print(dataframe_2.dtypes)
+print(dataframe_2.describe(include="all"))
+
+print(dataframe_2["item_name"].value_counts())
+print("The most ordered item: ", dataframe_2["item_name"].value_counts().idxmax())
+print("The least odered item: ", dataframe_2["item_name"].value_counts().idxmin())
+
+print("total order count: ", dataframe_2["quantity"].sum())
+print("Total revenue generated: ", dataframe_2["price in $"].sum())
