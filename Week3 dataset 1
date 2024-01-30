@@ -1,0 +1,38 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+local_path = "D:\Somya\prepinsta internship\week 3\dataset no.1.csv"
+
+dataframe = pd.read_csv(local_path)
+dataframe.dropna(subset = ["Age"], axis=0, inplace=True)
+
+dataframe["Location"].replace("India,In", "India", inplace=True)
+dataframe["Location"].replace("New York,Ny", "New York", inplace=True)
+dataframe["Location"].replace("India In", "India", inplace=True)
+dataframe["Location"].replace("Australia Aus", "Australia", inplace=True)
+
+dataframe["Established"] = dataframe["Established"].astype("int")
+dataframe["Established"].replace(-1,1999,inplace=True)
+
+dataframe["Age"] = dataframe["Age"].astype("int")
+
+dataframe["Rating"].replace(-1, np.NaN, inplace=True)
+
+dataframe["Easy Apply"].replace("-1",False, inplace=True)
+dataframe["Easy Apply"] = dataframe["Easy Apply"].astype("bool")
+
+dataframe["Salary"].replace("[$,k]", "", regex=True, inplace=True)
+
+dummy_variables = pd.get_dummies(dataframe["Location"])
+dataframe = pd.concat([dataframe, dummy_variables], axis=1)
+
+dataframe[["Min_salary","Max_salary"]] = dataframe["Salary"].str.extract(r"(\d+)-(\d+)").astype(float)
+
+plt.boxplot(dataframe[["Age","Min_salary","Max_salary"]], labels= ["Age","Min_salary","Max_salary"])
+plt.title("boxplot to analyse age with the maximum and minimum salary")
+
+dataframe.to_csv(r"D:\Somya\prepinsta internship\week 3\cleaned dataset no.1.csv", index= False)
+
+print(dataframe)
+print(dataframe.describe(include="all"))
+plt.show()
